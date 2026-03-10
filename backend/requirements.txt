@@ -3,9 +3,9 @@ uvicorn==0.30.1
 python-dotenv==1.0.1
 pydantic==2.7.1
 transformers==4.41.2
-torch
+torch==2.1.2
 peft==0.11.1
 huggingface-hub==0.23.2
-Pillow
+Pillow==10.3.0
 accelerate==0.30.0
-safetensors
+safetensors==0.4.3
