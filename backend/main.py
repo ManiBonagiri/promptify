@@ -1,6 +1,8 @@
 # main.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from schemas import PromptRequest, PromptResponse, ImageRequest
 from model import optimize_prompt
 import os
@@ -16,12 +18,12 @@ app = FastAPI(title="Promptify API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
+@app.get("/health")
 def root():
     return {"status": "Promptify API is running 🚀"}
 
@@ -37,15 +39,11 @@ def generate_image(req: ImageRequest):
     if not HF_TOKEN:
         raise HTTPException(status_code=500, detail="HF_TOKEN not set in .env")
     try:
-        client = InferenceClient(
-            token=HF_TOKEN,
-        )
-        # Returns a PIL Image directly
+        client = InferenceClient(token=HF_TOKEN)
         image = client.text_to_image(
             req.prompt,
             model="stabilityai/stable-diffusion-xl-base-1.0",
         )
-        # Convert PIL image to base64
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
@@ -57,3 +55,9 @@ def generate_image(req: ImageRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ── Serve React frontend ──────────────────────────────────────
+frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+
+if os.path.exists(frontend_dist):
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="static")
